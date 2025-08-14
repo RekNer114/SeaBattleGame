@@ -1,9 +1,8 @@
-
 import random
 import os
 import string
-import datetime 
-import time 
+import datetime
+import time
 import json
 
 #constants
@@ -37,7 +36,7 @@ SHIPS_LEN ={
 BOARD_SIZE = 10
 
 
-ORIENTATIONS = ['H' , 'V'] 
+ORIENTATIONS = ['H' , 'V']
 
 SAVE_PATH = "saves"
 
@@ -54,11 +53,11 @@ class Ship:
         self.coords = coords
         self.hits  = set()
         self.orientation = orientation
-    
+
     #Function to check if the ship is sunk by checking if all parts of ship was hitted.
     def is_sunk(self):
         return len(self.hits) >= self.length
-    
+
     #Save hit coordinates
     def hit(self, coord):
         if coord in self.coords:
@@ -82,11 +81,11 @@ class Board:
     #Function to place ship on the board
     def place_ship(self, ship):
         for (x, y) in ship.coords:
-            
-            #Check if ship's cooordinates are right 
+
+            #Check if ship's cooordinates are right
             if not (0<=x<BOARD_SIZE and 0<=y<BOARD_SIZE):
                 raise Exception("Wrong placement")
-            
+
             #checking if there a no collides with other ships
             for dx in (-1, 0, 1):
                 for dy in (-1, 0, 1):
@@ -94,8 +93,8 @@ class Board:
                     if 0<=x1<BOARD_SIZE and 0<=y1<BOARD_SIZE:
                         if (self.grid[x1][y1] == SYMBOLS['ship']):
                             raise Exception("ships collide")
-        
-        #place 
+
+        #place
         for (x,y) in ship.coords:
             self.grid[x][y] = SYMBOLS['ship']
         self.ships.append(ship)
@@ -106,10 +105,10 @@ class Board:
 
     #Function that return string representation of the board
     def get_board(self, reveal=False):
-        header = '   ' + ' '.join(string.ascii_uppercase[:BOARD_SIZE])
+        header = '  ' + ' '.join(string.ascii_uppercase[:BOARD_SIZE])
         rows = [header]
 
-        #using enumerate to go through each element and 
+        #using enumerate to go through each element and
         #also tracking index
         for i, row in enumerate(self.grid):
             b_row = []
@@ -131,7 +130,7 @@ class Board:
         #check if hit is not at the already hitted cells
         if current in (SYMBOLS['hit'], SYMBOLS['miss'], SYMBOLS['sunk']):
             return "Try again"
-        
+
         #proccess hit
         for ship in self.ships:
             if coords in ship.coords:
@@ -140,13 +139,13 @@ class Board:
                 if ship.is_sunk():
                     for xy in ship.coords:
                         self.grid[xy[0]][xy[1]] = SYMBOLS['sunk']
-                    self.mark_missed(ship)    
+                    self.mark_missed(ship)
                     return f"Sunk {ship.name}"
                 return "Hit"
-            
+
         self.grid[x][y] = SYMBOLS['miss']
         return "Miss"
-    
+
     def mark_missed(self, ship):
         for x,y in ship.coords:
             for dx in [-1, 0, 1]:
@@ -158,9 +157,9 @@ class Board:
 
 
 #class that represents Player and saves it's name, board and opponents board
-class Player: 
+class Player:
     def __init__(self, name):
-        #User's name        
+        #User's name
         self.name = name
         #user's board
         self.board = Board()
@@ -173,7 +172,7 @@ class Player:
 
     def make_amove(self):
         raise NotImplementedError()
-    
+
 
     def display_board(self):
         print(self.board.get_board(reveal=False))
@@ -192,47 +191,47 @@ class HumanPlayer(Player):
 
                 length = SHIPS_LEN[ship_name]
 
-                while True: 
+                while True:
                     try:
                         self.display_board()
-                        
+
                         coords, orientation = self.get_ship_placement(ship_name, length)
                         print(coords)
 
                         ship = Ship(ship_name, length, coords, orientation)
                         self.board.place_ship(ship)
-                        
+
                         clear_screen()
                         break
 
                     except Exception as e:
                         clear_screen()
                         print(e)
-   
+
     #Method to get coordinates of the ship  placement
     def get_ship_placement(self, ship_name, length):
         inp = input(f"Enter start and orientation (H or V) for {ship_name} (length {length}), e.g. A5 H: ")
         start, orientation = self.parse_coords(inp, (length==1))
         coords = self.generate_start(start, orientation, length)
         return coords, orientation
-    
+
     #Method to parse user's input ot get coords
     def parse_coords(self, input_val, is_battleship):
         tokens = input_val.split()
 
         if len(tokens) !=2 and not is_battleship:
             raise Exception("Wrong input")
-        
+
         if tokens[0][0].upper() not in string.ascii_uppercase[:BOARD_SIZE]:
             raise Exception("Column letter out of bounds")
-           
+
         col = string.ascii_uppercase.index(tokens[0][0].upper())
-        row = int(tokens[0][1:]) - 1 
+        row = int(tokens[0][1:]) - 1
         ori = tokens[1].upper() if not is_battleship else 'H'
-        
+
         if not (0 <= row < BOARD_SIZE):
             raise Exception("Row out of bounds")
-             
+
         return(row, col), ori
 
     #function to calculate start coordinates
@@ -240,7 +239,7 @@ class HumanPlayer(Player):
         if ori not in ORIENTATIONS:
            raise Exception("Wrong orientation!")
         row, col = start
-               
+
         coords = []
         for i in range(length):
 
@@ -252,7 +251,7 @@ class HumanPlayer(Player):
             coords.append((x, y))
 
         return coords
-        
+
 
     #overriden method for user(human) to see own ships
     def display_board(self):
@@ -265,7 +264,7 @@ class HumanPlayer(Player):
             try:
                 inp = input("Enter coordinates to fire (ex. A1) : ")
 
-                #user can provide instructions to save game 
+                #user can provide instructions to save game
                 if inp == "save":
                     return "save"
 
@@ -276,7 +275,7 @@ class HumanPlayer(Player):
                 return (row, col)
             except:
                 print("wrong coordinates")
-    
+
 
 
 class ComputerPlayer(Player):
@@ -289,7 +288,7 @@ class ComputerPlayer(Player):
             (x, y) for x in range(BOARD_SIZE)
                     for y in range(BOARD_SIZE)
         ]
-    
+
         random.shuffle(self.possible_moves)
 
     #override placement and make it randm
@@ -300,10 +299,10 @@ class ComputerPlayer(Player):
                 while True:
                     orientation = random.choice(ORIENTATIONS)
                     x, y = random.randint(0, BOARD_SIZE-1), random.randint(0, BOARD_SIZE-1)
-                    coords = [(x + (j if orientation == 'V' else 0), 
+                    coords = [(x + (j if orientation == 'V' else 0),
                               y + (j if orientation == 'H' else 0))
                               for j in range(length)]
-                    try: 
+                    try:
                         ship = Ship(ship_name, length, coords, orientation)
                         self.board.place_ship(ship)
                         break
@@ -315,7 +314,7 @@ class ComputerPlayer(Player):
         move = random.choice(self.possible_moves)
         self.possible_moves.remove(move)
         return move
-    
+
 
 class GameHistory:
 
@@ -327,12 +326,12 @@ class GameHistory:
         self.result = None
         self.winner = None
         self.filename = filename or f"game_{username}_{int(time.time())}.json"
-        
+
     def add_move(self, name, coord, res):
         self.moves.append({
             'player': name,
             'coord' : coord,
-            'res' : res, 
+            'res' : res,
             'time' : datetime.datetime.now().isoformat()
         })
 
@@ -342,7 +341,7 @@ class GameHistory:
         if final:
             self.end_time = datetime.datetime.now().isoformat()
             self.winner = winner
-        
+
         #inner function to serialize players(stuck it in to the dictionary)
         def ser_player(p, is_ai=False):
             return {
@@ -360,7 +359,7 @@ class GameHistory:
                 ],
                 "board_grid" : p.board.grid
             }
-        
+
         game_data = {
             "start_time": self.start_time.isoformat(),
             "end_time" : self.end_time if self.end_time is None else self.end_time.isoformat(),
@@ -369,8 +368,8 @@ class GameHistory:
             "players":  [
                 ser_player(player),
                 ser_player(ai, is_ai=True)
-            ]      
-            
+            ]
+
         }
 
         if not os.path.exists(SAVE_PATH):
@@ -380,7 +379,7 @@ class GameHistory:
 
         with open(path, "w") as file:
             json.dump(game_data, file, indent=4)
-        
+
 
     @staticmethod
     def list_games():
@@ -397,7 +396,7 @@ class GameHistory:
             return json.load(file)
 
 #class that represents game
-class BattleshipGame: 
+class BattleshipGame:
 
     def __init__(self, name):
         self.player = HumanPlayer(name)
@@ -409,25 +408,25 @@ class BattleshipGame:
     def setup(self):
         self.ai.place_ships()
         self.player.place_ships()
-        
+
     def draw_game(self):
         print(f"{self.player.name}'s board: ")
         print(self.player.board.get_board(reveal=True))
         print("Opponent's board: ")
         print(self.ai.board.get_board())
-    
+
     #switch current player
     def switch_player(self):
         self.current = self.player if self.current == self.ai else self.ai
-    
+
     #play function
     def play(self, is_loaded=False):
         if not is_loaded:
             self.setup()
 
         #Game loop
-        while True: 
-            self.draw_game()    
+        while True:
+            self.draw_game()
             coord = self.current.make_amove()
 
             if coord == "save":
@@ -435,31 +434,31 @@ class BattleshipGame:
                 clear_screen()
                 print("Game Saved!")
                 continue
-            
+
             if coord == "menu" or coord == "exit":
                 break
-            
-            
+
+
             res = (
-                self.ai.board.shot(coord) 
-                if self.current == self.player 
+                self.ai.board.shot(coord)
+                if self.current == self.player
                 else self.player.board.shot(coord)
             )
 
-            
 
-            
+
+
             print(f"{self.current.name} fires at {coord}: {res}")
-            
+
             time.sleep(3)
-            
+
             clear_screen()
-            #check 
+            #check
             if res == "Try again":
                 print("You've already fired there! Try a different spot.")
                 continue
 
-            
+
             self.history.add_move(self.current.name, coord, res)
 
             if(self.ai.board.all_sunk() or self.player.board.all_sunk()):
@@ -485,15 +484,15 @@ class BattleshipGame:
                 print("Wrong input!")
 
 
-    #method to load game. Returns recreated game 
+    #method to load game. Returns recreated game
     @staticmethod
     def load_game(filepath):
-        
+
         game_data = GameHistory.load_game(filepath)
 
         u_name = game_data["players"][0]["name"]
         game = BattleshipGame(u_name)
-        
+
         #setting up game's history
         game.history = GameHistory(u_name, filename=filepath)
         game.history.moves = game_data["moves"]
@@ -526,7 +525,7 @@ class BattleshipGame:
 
             game.current = game.player if last_player_name == game.ai.name else game.ai
         else:
-            game.current = random.choice(game.ai, game.player)    
+            game.current = random.choice(game.ai, game.player)
 
         return game
 
@@ -564,23 +563,23 @@ def print_saved(files):
 
 def load():
     files = GameHistory.list_games()
-            
+
     if not files:
         print("No saved games.")
         return
-    
+
     print_saved(files)
 
     inp = input("Choose number of the game you want to load \nor write \'exit\' to exit: ")
-    
+
     if inp == 'exit':
         return
-        
+
     game = BattleshipGame.load_game(files[int(inp)-1])
     game.play(is_loaded=True)
     pass
 
-def start_game():  
+def start_game():
     u_name = input("Enter your name: ")
     game = BattleshipGame(u_name)
     game.play()
@@ -604,7 +603,7 @@ def main_menu():
         else:
             print("Wrong option!")
 
-     
+
 
 if __name__ == '__main__':
     main_menu()
